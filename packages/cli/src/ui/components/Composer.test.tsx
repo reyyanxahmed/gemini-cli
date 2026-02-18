@@ -6,7 +6,7 @@
 
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import { render } from '../../test-utils/render.js';
-import { act , useEffect } from 'react';
+import { act, useEffect } from 'react';
 import { Box, Text } from 'ink';
 import { Composer } from './Composer.js';
 import { UIStateContext, type UIState } from '../contexts/UIStateContext.js';
