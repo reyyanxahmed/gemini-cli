@@ -42,6 +42,32 @@ vi.mock('../utils/sessionUtils.js', async (importOriginal) => {
   };
 });
 
+vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@google/gemini-cli-core')>();
+  return {
+    ...actual,
+    CoreToolCallStatus: {
+      Validating: 'validating',
+      Scheduled: 'scheduled',
+      Error: 'error',
+      Success: 'success',
+      Executing: 'executing',
+      Cancelled: 'cancelled',
+      AwaitingApproval: 'awaiting_approval',
+    },
+    LlmRole: {
+      MAIN: 'main',
+      SUBAGENT: 'subagent',
+      UTILITY_TOOL: 'utility_tool',
+      USER: 'user',
+      MODEL: 'model',
+      SYSTEM: 'system',
+      TOOL: 'tool',
+    },
+  };
+});
+
 describe('GeminiAgent Session Resume', () => {
   let mockConfig: Mocked<Config>;
   let mockSettings: Mocked<LoadedSettings>;
@@ -225,7 +251,7 @@ describe('GeminiAgent Session Resume', () => {
             toolCallId: 'call-1',
             status: 'completed',
             title: 'Test Tool',
-            kind: 'read',
+            kind: 'READ',
             content: [
               {
                 type: 'content',
@@ -244,6 +270,7 @@ describe('GeminiAgent Session Resume', () => {
             toolCallId: 'call-2',
             status: 'failed',
             title: 'Write File',
+            kind: 'READ',
           }),
         }),
       );

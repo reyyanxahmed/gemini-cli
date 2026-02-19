@@ -683,6 +683,13 @@ export class Session {
             path: confirmationDetails.fileName,
             oldText: confirmationDetails.originalContent,
             newText: confirmationDetails.newContent,
+            _meta: {
+              kind: !confirmationDetails.originalContent
+                ? 'add'
+                : confirmationDetails.newContent === ''
+                  ? 'delete'
+                  : 'modify',
+            },
           });
         }
 
@@ -1203,6 +1210,13 @@ function toToolCallContent(toolResult: ToolResult): acp.ToolCallContent | null {
           path: toolResult.returnDisplay.fileName,
           oldText: toolResult.returnDisplay.originalContent,
           newText: toolResult.returnDisplay.newContent,
+          _meta: {
+            kind: !toolResult.returnDisplay.originalContent
+              ? 'add'
+              : toolResult.returnDisplay.newContent === ''
+                ? 'delete'
+                : 'modify',
+          },
         };
       }
       return null;
@@ -1290,11 +1304,19 @@ function toPermissionOptions(
 function toAcpToolKind(kind: Kind): acp.ToolKind {
   switch (kind) {
     case Kind.Read:
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      return 'READ' as unknown as acp.ToolKind;
     case Kind.Edit:
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      return 'EDIT' as unknown as acp.ToolKind;
+    case Kind.Execute:
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      return 'EXECUTE' as unknown as acp.ToolKind;
+    case Kind.Search:
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      return 'SEARCH' as unknown as acp.ToolKind;
     case Kind.Delete:
     case Kind.Move:
-    case Kind.Search:
-    case Kind.Execute:
     case Kind.Think:
     case Kind.Fetch:
     case Kind.Other:
