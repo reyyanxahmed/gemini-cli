@@ -79,6 +79,18 @@ interface InkRenderMetrics extends RenderMetrics {
   staticOutput?: string;
 }
 
+function isInkRenderMetrics(
+  metrics: RenderMetrics,
+): metrics is InkRenderMetrics {
+  const m = metrics as Record<string, unknown>;
+  return (
+    typeof m === 'object' &&
+    m !== null &&
+    'output' in m &&
+    typeof m['output'] === 'string'
+  );
+}
+
 class XtermStdout extends EventEmitter {
   private state: TerminalState;
   private pendingWrites = 0;
@@ -369,9 +381,9 @@ export const render = (
       exitOnCtrlC: false,
       patchConsole: false,
       onRender: (metrics: RenderMetrics) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-        const inkMetrics = metrics as InkRenderMetrics;
-        stdout.onRender(inkMetrics.staticOutput ?? '', inkMetrics.output);
+        if (isInkRenderMetrics(metrics)) {
+          stdout.onRender(metrics.staticOutput ?? '', metrics.output);
+        }
       },
     });
   });
