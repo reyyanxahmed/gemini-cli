@@ -68,7 +68,10 @@ import { ideContextStore } from '../ide/ideContext.js';
 import { WriteTodosTool } from '../tools/write-todos.js';
 import type { FileSystemService } from '../services/fileSystemService.js';
 import { StandardFileSystemService } from '../services/fileSystemService.js';
-import { logRipgrepFallback, logFlashFallback } from '../telemetry/loggers.js';
+import { logRipgrepFallback, logFlashFallback ,
+  logApprovalModeSwitch,
+  logApprovalModeDuration,
+} from '../telemetry/loggers.js';
 import {
   RipgrepFallbackEvent,
   FlashFallbackEvent,
@@ -103,9 +106,7 @@ import type { EventEmitter } from 'node:events';
 import { PolicyEngine } from '../policy/policy-engine.js';
 import { ApprovalMode, type PolicyEngineConfig } from '../policy/types.js';
 import { HookSystem } from '../hooks/index.js';
-import type { UserTierId } from '../code_assist/types.js';
-import type { RetrieveUserQuotaResponse } from '../code_assist/types.js';
-import type { AdminControlsSettings } from '../code_assist/types.js';
+import type { UserTierId , RetrieveUserQuotaResponse , AdminControlsSettings } from '../code_assist/types.js';
 import type { HierarchicalMemory } from './memory.js';
 import { getCodeAssistServer } from '../code_assist/codeAssist.js';
 import type { Experiments } from '../code_assist/experiments/experiments.js';
@@ -119,10 +120,6 @@ import { debugLogger } from '../utils/debugLogger.js';
 import { SkillManager, type SkillDefinition } from '../skills/skillManager.js';
 import { startupProfiler } from '../telemetry/startupProfiler.js';
 import type { AgentDefinition } from '../agents/types.js';
-import {
-  logApprovalModeSwitch,
-  logApprovalModeDuration,
-} from '../telemetry/loggers.js';
 import { fetchAdminControls } from '../code_assist/admin/admin_controls.js';
 import { isSubpath } from '../utils/paths.js';
 import { UserHintService } from './userHintService.js';
@@ -600,6 +597,7 @@ export class Config {
   private lastQuotaFetchTime = 0;
   private lastEmittedQuotaRemaining: number | undefined;
   private lastEmittedQuotaLimit: number | undefined;
+  private mcpInitializationPromise?: Promise<void>;
 
   private emitQuotaChangedEvent(): void {
     const pooled = this.getPooledQuota();
@@ -946,6 +944,10 @@ export class Config {
     return this.initialized;
   }
 
+  async waitForMcpInitialization(): Promise<void> {
+    await this.mcpInitializationPromise;
+  }
+
   /**
    * Dedups initialization requests using a shared promise that is only resolved
    * once.
@@ -999,7 +1001,7 @@ export class Config {
     );
     // We do not await this promise so that the CLI can start up even if
     // MCP servers are slow to connect.
-    const mcpInitialization = Promise.allSettled([
+    this.mcpInitializationPromise = Promise.allSettled([
       this.mcpClientManager.startConfiguredMcpServers(),
       this.getExtensionLoader().start(this),
     ]).then((results) => {
@@ -1011,7 +1013,7 @@ export class Config {
     });
 
     if (!this.interactive || this.experimentalZedIntegration) {
-      await mcpInitialization;
+      await this.mcpInitializationPromise;
     }
 
     if (this.skillsSupport) {

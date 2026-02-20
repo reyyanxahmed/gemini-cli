@@ -17,8 +17,7 @@ import {
   getInitialChatHistory,
 } from '../utils/environmentContext.js';
 import type { ServerGeminiStreamEvent, ChatCompressionInfo } from './turn.js';
-import { CompressionStatus } from './turn.js';
-import { Turn, GeminiEventType } from './turn.js';
+import { CompressionStatus , Turn, GeminiEventType } from './turn.js';
 import type { Config } from '../config/config.js';
 import { getCoreSystemPrompt } from './prompts.js';
 import { checkNextSpeaker } from '../utils/nextSpeakerChecker.js';
@@ -792,6 +791,10 @@ export class GeminiClient {
     isInvalidStreamRetry: boolean = false,
     displayContent?: PartListUnion,
   ): AsyncGenerator<ServerGeminiStreamEvent, Turn> {
+    if (typeof this.config.waitForMcpInitialization === 'function') {
+      await this.config.waitForMcpInitialization();
+    }
+
     if (!isInvalidStreamRetry) {
       this.config.resetTurn();
     }
